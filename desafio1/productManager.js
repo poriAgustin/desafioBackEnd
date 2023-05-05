@@ -2,10 +2,32 @@ class ProductManager {
     constructor() {
         this.products = []
         this.index = 0;
+        this.path = 'products.json'
+    }
+
+    async generateId(){
+        let products = await this.getProducts()
+        return products.length + 1
     }
 
     getProducts = () => {
         return this.products
+    }
+
+    addProduct = (title, description, price, thumbnail, code, stock) => {
+        // Realizar validacion de no repetir el code
+        this.index++
+        const id = this.index
+        const product = { id, title, description, price, thumbnail, code, stock }
+        const existe = this.products.some(product => product.code === code)
+        if (existe) {
+            return console.log('El codigo ya fue ingresado, por favor ingresa el codigo correcto');
+        }
+        // Validar q todas las validaciones sean obligatorias
+        if (!title || !description || !price || !thumbnail || !code || !stock) {
+            return console.log('Faltan datos');
+        }
+        this.products.push(product)
     }
 
     getProductById = (id) => {
@@ -20,21 +42,30 @@ class ProductManager {
         return this.products;
     }
 
-    addProduct = (title, description, price, thumbnail, code, stock) => {
-        this.index++
-        const id = this.index
-        const product = { id, title, description, price, thumbnail, code, stock }
-        // Realizar validacion de no repetir el code
-        const existe = this.products.some(product => product.code === code)
-        if (existe) {
-            return console.log('El codigo ya fue ingresado, por favor ingresa el codigo correcto');
+    async updateProduct(id, product){
+        let products = await this.getProducts()
+        let indice = products.findIndex(product => product.id === id)
+        if (indice !== -1) {
+            products[indice].title = product.title
+            products[indice].description = product.description
+            products[indice].price = product.price
+            products[indice].code = product.code
+            products[indice].stock = product.stock
         }
-        // Validar q todas las validaciones sean obligatorias
-        if (!title || !description || !price || !thumbnail || !code || !stock) {
-            return console.log('Faltan datos');
-        }
-        this.products.push(product)
+        await fs.promises.writeFile(this.path, JSON.stringify(products))
+        return console.log(`Producto actualizado`);
     }
+
+    async deleteProduct(id){
+        let products = await this.getProducts()
+        let indice = products.findIndex(product => product.id === id)
+        if (indice !== -1) {
+            products.splice(indice, 1)
+        }
+        await fs.promises.writeFile(this.path, JSON.stringify(products))
+        return console.log(`Producto Eliminado`);
+    }
+
 }
 
 const manager = new ProductManager()
@@ -48,10 +79,7 @@ const products = manager.getProducts();
 console.log(products);
 
 const product = manager.getProductById(1234);
-console.log(product);
 
-const productNotFound = manager.getProductById(15);
-console.log(productNotFound);
-
+manager.deleteProduct(1)
 
 console.log(manager.products);
